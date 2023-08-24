@@ -47,6 +47,13 @@ plt.show()
 population_url = "https://simple.wikipedia.org/wiki/List_of_U.S._states_by_population"
 population_data = pd.read_html(population_url, header=0)[0]
 
+#wczytanie stanów
+state_url = "https://en.wikipedia.org/wiki/List_of_U.S._state_and_territory_abbreviations"
+state_data = pd.read_html(state_url, header=0)[0]
+
+test = "test.csv"
+state_data.to_csv(test)
+
 # Wybór odpowiednich kolumn
 population_data = population_data[["State", "Census population, April 1, 2020 [1][2]", "Census population, April 1, 2010 [1][2]"]]
 
@@ -54,7 +61,7 @@ population_data = population_data[["State", "Census population, April 1, 2020 [1
 incidents_per_state = df_copy.groupby('state').size().reset_index(name='Incident Count')
 
 # Połączenie danych z obu tabel
-merged_data = pd.merge(population_data, incidents_per_state, left_on='State', right_on='state', how='left')
+merged_data = pd.merge(population_data, incidents_per_state, left_on='State', right_on='State', how='left')
 
 # Obliczanie ilości incydentów na 1000 mieszkańców
 merged_data['Incidents per 1000 Residents'] = (merged_data['Incident Count'] / merged_data['Census population, April 1, 2020 [1][2]']) * 1000
