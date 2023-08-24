@@ -51,20 +51,27 @@ population_data = pd.read_html(population_url, header=0)[0]
 state_url = "https://en.wikipedia.org/wiki/List_of_U.S._state_and_territory_abbreviations"
 state_data = pd.read_html(state_url, header=0)[0]
 
-test = "test.csv"
-state_data.to_csv(test)
+abv_states_all = pd.read_html('https://en.wikipedia.org/wiki/List_of_U.S._state_and_territory_abbreviations', header=0)
+col_name_state = abv_states_all[0].columns[0]
+col_name_abv = abv_states_all[0].columns[5]
+col_name_abv
 
-# Wybór odpowiednich kolumn
-population_data = population_data[["State", "Census population, April 1, 2020 [1][2]", "Census population, April 1, 2010 [1][2]"]]
+pop_states_all = pd.read_html('https://simple.wikipedia.org/wiki/List_of_U.S._states_by_population', header=0)
+col_name = pop_states_all[0].columns[3]
+pop_states_all[0].rename(columns={col_name: 'Population'},inplace=True)
+pop_states = pop_states_all[0][['State', 'Population']].sort_values(by='State')
 
-# Grupowanie incydentów według stanu i liczenie ich liczności
-incidents_per_state = df_copy.groupby('state').size().reset_index(name='Incident Count')
+#pop_states_all[0].iloc[:,3] - działamy na indeksie
+df_by_state = df.groupby('state')['id'].count()
+df_by_state.rename_axis("Abbreviation" ,inplace=True)
 
-# Połączenie danych z obu tabel
-merged_data = pd.merge(population_data, incidents_per_state, left_on='State', right_on='State', how='left')
+abv_states_all[0].rename(columns={col_name_state: 'State', col_name_abv: 'Abbreviation'},inplace=True)
+abv_states = abv_states_all[0][['State', 'Abbreviation']].sort_values(by='State')
+df_pop_partial = pd.merge(pop_states, abv_states,how='inner',on='State' )
 
-# Obliczanie ilości incydentów na 1000 mieszkańców
-merged_data['Incidents per 1000 Residents'] = (merged_data['Incident Count'] / merged_data['Census population, April 1, 2020 [1][2]']) * 1000
+# Połączenie skrótów i liczebności populacji z ilością incydentów
+df_pop = pd.merge(df_pop_partial, df_by_state ,how='inner',on='Abbreviation' )
 
-# Wyświetlanie wyniku
-print(merged_data[['State', 'Incidents per 1000 Residents']])
+# Dodanie kolumny: ilość incydentów na 1000 mieszkańców
+df_pop['Per 1000'] = (df_pop.id / df_pop.Population ) *100
+df_pop
